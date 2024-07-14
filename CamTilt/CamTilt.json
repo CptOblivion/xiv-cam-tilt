@@ -1,0 +1,12 @@
+{
+  "Author": "Liam Richardson",
+  "Name": "Cam Tilt",
+  "Punchline": "Attempting more natural-feeling camera pitching",
+  "Description": "Dynamically pitches the camera with zoom and look height, to see more betterer",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "sample",
+    "plugin",
+    "goats"
+  ]
+}
