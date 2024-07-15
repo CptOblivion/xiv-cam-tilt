@@ -43,6 +43,7 @@ public class CamController : IDisposable
 
     // TODO: should only add when in-game (maybe wait until current player is valid?)
     Framework.Update += OnFrameworkTick;
+    ConfigWindow.OnConfigChanged += UpdateAngle;
   }
 
   /*
@@ -94,24 +95,31 @@ public class CamController : IDisposable
     }
 
     LastHeight = vec.Y;
-    ConfigWindow.SetRawAngle(vec.Y);
-
-    // TODO: set a proper eased curve (slerp instead of lerp?) for angle
-
-    float range = Configuration.PitchMax - Configuration.PitchMin;
-    float converted = 1 - (float)(Math.Acos(vec.Y) / Math.PI);
-    ConfigWindow.SetCleanAngle(converted);
-
-    converted = Math.Clamp((converted - Configuration.PitchMin) / range, 0, 1);
-    converted = (1 - converted) * LIMIT_RANGE + LIMIT_MIN; // scale and fit to final range
-    ConfigWindow.SetMappedTilt(converted);
-    // Logger.Verbose($"raw {rangeFit} | converted {converted}");
-
-    GameConfig.Set(UiControlOption.TiltOffset, converted);
+    UpdateAngle();
   }
 
   public void Dispose()
   {
     Framework.Update -= OnFrameworkTick;
+    ConfigWindow.OnConfigChanged -= UpdateAngle;
+  }
+
+  private void UpdateAngle()
+  {
+    ConfigWindow.SetRawAngle(LastHeight);
+
+    // TODO: set a proper eased curve (slerp instead of lerp?) for angle
+
+    float range = Configuration.PitchBottom - Configuration.PitchTop;
+    float converted = 1 - (float)(Math.Acos(LastHeight) / Math.PI);
+    ConfigWindow.SetCleanAngle(converted);
+
+    converted = Math.Clamp((converted - Configuration.PitchTop) / range, 0, 1);
+    converted = (1 - converted) * LIMIT_RANGE + LIMIT_MIN; // scale and fit to final range
+    ConfigWindow.SetMappedTilt(converted);
+    // Logger.Verbose($"raw {rangeFit} | converted {converted}");
+
+    GameConfig.Set(UiControlOption.TiltOffset, converted);
+
   }
 }

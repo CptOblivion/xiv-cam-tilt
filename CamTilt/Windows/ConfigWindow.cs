@@ -32,6 +32,10 @@ public class ConfigWindow : Window, IDisposable
     private float mappedTilt;
     public void SetMappedTilt(float angle) => mappedTilt = angle;
 
+    public delegate void ConfigChangedHandler();
+
+    public event ConfigChangedHandler OnConfigChanged;
+
     public void Dispose() { }
 
     public override void Draw()
@@ -40,8 +44,9 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.Separator();
         DrawSlider("Player height offset", () => Configuration.PlayerHeightOffset, x => Configuration.PlayerHeightOffset = x, 0, 2);
-        DrawSlider("Pitch Min", () => Configuration.PitchMin, x => Configuration.PitchMin = x, 0, Configuration.PitchMax - .01f);
-        DrawSlider("Pitch Max", () => Configuration.PitchMax, x => Configuration.PitchMax = x, Configuration.PitchMin + .01f, 1);
+        DrawSlider("Pitch Top", () => Configuration.PitchTop, x => Configuration.PitchTop = x, 0, Configuration.PitchBottom - .01f);
+        DrawSlider("Pitch Bottom", () => Configuration.PitchBottom, x => Configuration.PitchBottom = x, Configuration.PitchTop + .01f, 1);
+        // TODO: configs for tilt limits
 
         ImGui.Separator();
         DrawCheckbox("Show debug stuff", () => Configuration.ShowDebug, x => Configuration.ShowDebug = x);
@@ -64,6 +69,7 @@ public class ConfigWindow : Window, IDisposable
         {
             setter(val);
             Configuration.Save();
+            OnConfigChanged?.Invoke();
         };
     }
     private void DrawSlider(string label, Func<float> getter, Action<float> setter, float min, float max)
@@ -73,6 +79,7 @@ public class ConfigWindow : Window, IDisposable
         {
             setter(val);
             Configuration.Save();
+            OnConfigChanged?.Invoke();
         };
     }
 }
