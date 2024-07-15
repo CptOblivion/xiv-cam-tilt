@@ -25,39 +25,54 @@ public class ConfigWindow : Window, IDisposable
         Configuration = plugin.Configuration;
     }
 
+    private float rawAngle;
+    public void SetRawAngle(float angle) => rawAngle = angle;
+    private float cleanAngle;
+    public void SetCleanAngle(float angle) => cleanAngle = angle;
+    private float mappedAngle;
+    public void SetMappedAngle(float angle) => mappedAngle = angle;
+
     public void Dispose() { }
 
     public override void Draw()
     {
-        // can't ref a property, so use a local copy
-        var globalEnabled = Configuration.GlobalEnable;
-        if (ImGui.Checkbox("Enable Globally", ref globalEnabled))
-        {
-            Configuration.GlobalEnable = globalEnabled;
-            Configuration.Save();
-        };
+        DrawCheckbox("Enable Globally", () => Configuration.GlobalEnable, x => Configuration.GlobalEnable = x);
 
         ImGui.Separator();
+        DrawSlider("Player height offset", () => Configuration.PlayerHeightOffset, x => Configuration.PlayerHeightOffset = x, 0, 2);
+        DrawSlider("Pitch Min", () => Configuration.PitchMin, x => Configuration.PitchMin = x, 0, Configuration.PitchMax - .01f);
+        DrawSlider("Pitch Max", () => Configuration.PitchMax, x => Configuration.PitchMax = x, Configuration.PitchMin + .01f, 1);
 
-        var playerHeightOffset = Configuration.PlayerHeightOffset;
-        if (ImGui.SliderFloat("Player height offset", ref playerHeightOffset, 0, 2))
-        {
-            Configuration.PlayerHeightOffset = playerHeightOffset;
-            Configuration.Save();
-        }
+        ImGui.Separator();
+        DrawCheckbox("Show debug stuff", () => Configuration.ShowDebug, x => Configuration.ShowDebug = x);
+        if (Configuration.ShowDebug) DrawDebug();
+    }
 
-        var pitchMin = Configuration.PitchMin;
-        if (ImGui.SliderFloat("Pitch Min", ref pitchMin, 0, Configuration.PitchMax - .01f))
-        {
-            Configuration.PitchMin = pitchMin;
-            Configuration.Save();
-        }
+    private void DrawDebug()
+    {
+        ImGui.Separator();
+        ImGui.SliderFloat("raw angle", ref rawAngle, -1, 1, null, ImGuiSliderFlags.NoInput);
+        ImGui.SliderFloat("clean angle", ref cleanAngle, 0, 1, null, ImGuiSliderFlags.NoInput);
+        ImGui.SliderFloat("mapped angle", ref mappedAngle, -.08f, .21f, null, ImGuiSliderFlags.NoInput);
+        ImGui.Separator();
+    }
 
-        var pitchMax = Configuration.PitchMax;
-        if (ImGui.SliderFloat("Pitch Max", ref pitchMax, Configuration.PitchMin + .01f, 1))
+    private void DrawCheckbox(string label, Func<bool> getter, Action<bool> setter)
+    {
+        var val = getter();
+        if (ImGui.Checkbox(label, ref val))
         {
-            Configuration.PitchMax = pitchMax;
+            setter(val);
             Configuration.Save();
-        }
+        };
+    }
+    private void DrawSlider(string label, Func<float> getter, Action<float> setter, float min, float max)
+    {
+        var val = getter();
+        if (ImGui.SliderFloat(label, ref val, min, max))
+        {
+            setter(val);
+            Configuration.Save();
+        };
     }
 }

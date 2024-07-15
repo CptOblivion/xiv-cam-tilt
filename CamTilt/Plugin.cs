@@ -36,7 +36,7 @@ public sealed class Plugin : IDalamudPlugin
 
         ModuleLog logger = new ModuleLog("CamTilt");
 
-        camController = new CamController(Configuration, framework, clientState, gameConfig, logger);
+        camController = new CamController(Configuration, framework, clientState, gameConfig, logger, ConfigWindow);
 
         WindowSystem.AddWindow(ConfigWindow);
 
