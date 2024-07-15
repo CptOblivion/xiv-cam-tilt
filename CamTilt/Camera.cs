@@ -104,7 +104,7 @@ public class CamController : IDisposable
 
     converted = Math.Clamp((converted - Configuration.PitchMin) / range, 0, 1);
     converted = (1 - converted) * LIMIT_RANGE + LIMIT_MIN; // scale and fit to final range
-    ConfigWindow.SetMappedAngle(converted);
+    ConfigWindow.SetMappedTilt(converted);
     // Logger.Verbose($"raw {rangeFit} | converted {converted}");
 
     GameConfig.Set(UiControlOption.TiltOffset, converted);

@@ -29,8 +29,8 @@ public class ConfigWindow : Window, IDisposable
     public void SetRawAngle(float angle) => rawAngle = angle;
     private float cleanAngle;
     public void SetCleanAngle(float angle) => cleanAngle = angle;
-    private float mappedAngle;
-    public void SetMappedAngle(float angle) => mappedAngle = angle;
+    private float mappedTilt;
+    public void SetMappedTilt(float angle) => mappedTilt = angle;
 
     public void Dispose() { }
 
@@ -51,9 +51,9 @@ public class ConfigWindow : Window, IDisposable
     private void DrawDebug()
     {
         ImGui.Separator();
-        ImGui.SliderFloat("raw angle", ref rawAngle, -1, 1, null, ImGuiSliderFlags.NoInput);
-        ImGui.SliderFloat("clean angle", ref cleanAngle, 0, 1, null, ImGuiSliderFlags.NoInput);
-        ImGui.SliderFloat("mapped angle", ref mappedAngle, -.08f, .21f, null, ImGuiSliderFlags.NoInput);
+        ImGui.SliderFloat("Y offset", ref rawAngle, -1, 1, null, ImGuiSliderFlags.NoInput);
+        ImGui.SliderFloat("Pitch (0-1)", ref cleanAngle, 0, 1, null, ImGuiSliderFlags.NoInput);
+        ImGui.SliderFloat("mapped tilt", ref mappedTilt, -.08f, .21f, null, ImGuiSliderFlags.NoInput);
         ImGui.Separator();
     }
 
