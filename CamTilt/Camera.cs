@@ -25,7 +25,6 @@ public unsafe class CamController : IDisposable
   private const float LIMIT_MIN = -.08f;
   private const float LIMIT_MAX = .21f;
   private const float LIMIT_RANGE = LIMIT_MAX - LIMIT_MIN;
-  private const float PLAYER_HEIGHT = 1;
 
   public unsafe CamController(Configuration configuration, IFramework framework, IClientState clientState, IGameConfig gameConfig, ModuleLog logger)
   {
@@ -77,9 +76,10 @@ public unsafe class CamController : IDisposable
     }
 
     Vector3 playerPos = localPlayer.Position;
-    playerPos.Y += PLAYER_HEIGHT;
+    playerPos.Y += Configuration.PlayerHeightOffset;
     Vector3 vec = CurrentCamera->Position - playerPos;
     vec = vec.Normalized;
+
     if (vec.Y == LastHeight)
     {
       return;
@@ -89,10 +89,11 @@ public unsafe class CamController : IDisposable
 
     // TODO: set a proper curve for converted instead of just a clamp-scale-and-shift
 
-    // TODO: move player height, converted offset, converted scale into settings
-    float converted = .75f - vec.Y;
-    converted = Math.Clamp(converted * LIMIT_RANGE + LIMIT_MIN, LIMIT_MIN, LIMIT_MAX); // scale, an
-    Logger.Verbose($"raw {vec.Y}, converted {converted}");
+    float range = Configuration.PitchMax - Configuration.PitchMin;
+    float rangeFit = (vec.Y + 1) * 0.5f;
+    float converted = Math.Clamp((rangeFit - Configuration.PitchMin) / range, 0, 1);
+    converted = (1 - converted) * LIMIT_RANGE + LIMIT_MIN; // scale and fit to final range
+    Logger.Verbose($"raw {rangeFit} | converted {converted}");
 
     GameConfig.Set(UiControlOption.TiltOffset, converted);
   }
