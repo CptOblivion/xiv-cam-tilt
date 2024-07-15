@@ -2,6 +2,8 @@ using System;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+// using FFXIVClientStructs.FFXIV.Client.Game;
+// using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Dalamud.Game.Config;
 using Dalamud.Logging.Internal;
@@ -10,13 +12,10 @@ using Dalamud.Logging.Internal;
 
 namespace CamTilt;
 
-public unsafe class CamController : IDisposable
+public class CamController : IDisposable
 {
   private Configuration Configuration { get; init; }
   private ModuleLog Logger { get; init; }
-  private CameraManager* CurrentCameraManager { get; set; }
-  private Camera* CurrentCamera { get; set; }
-  // private IPlayerCharacter PlayerCharacter { get; set; }
   private float LastHeight { get; set; }
   private IFramework Framework { get; init; }
   private IClientState ClientState { get; init; }
@@ -26,20 +25,13 @@ public unsafe class CamController : IDisposable
   private const float LIMIT_MAX = .21f;
   private const float LIMIT_RANGE = LIMIT_MAX - LIMIT_MIN;
 
-  public unsafe CamController(Configuration configuration, IFramework framework, IClientState clientState, IGameConfig gameConfig, ModuleLog logger)
+  public CamController(Configuration configuration, IFramework framework, IClientState clientState, IGameConfig gameConfig, ModuleLog logger)
   {
     Configuration = configuration;
     Framework = framework;
     ClientState = clientState;
     Logger = logger;
     GameConfig = gameConfig;
-
-    CurrentCameraManager = CameraManager.Instance();
-    if (CurrentCameraManager == null)
-    {
-      logger.Error("no camera manager found!");
-      return;
-    }
 
     // TODO: should only add when in-game (maybe wait until current player is valid?)
     Framework.Update += OnFrameworkTick;
@@ -59,25 +51,31 @@ public unsafe class CamController : IDisposable
     {
       return;
     }
+
+    Vector3 camPos;
+    unsafe
+    {
+      CameraManager* manager = CameraManager.Instance();
+      if (manager == null)
+      {
+        return;
+      }
+
+      Camera* cam = manager->CurrentCamera;
+      if (cam == null)
+      {
+        return;
+      }
+      camPos = cam->Position;
+    }
+
     // TODO: skip this during cutscenes, first person
 
     IPlayerCharacter localPlayer = ClientState.LocalPlayer;
 
-    if (CameraManager.Instance() != CurrentCameraManager)
-    {
-      CurrentCameraManager = CameraManager.Instance();
-      Logger.Warning("Camera manager changed??");
-    }
-
-    if (CurrentCameraManager->CurrentCamera != CurrentCamera)
-    {
-      CurrentCamera = CurrentCameraManager->CurrentCamera;
-      Logger.Warning("Camera changed");
-    }
-
     Vector3 playerPos = localPlayer.Position;
     playerPos.Y += Configuration.PlayerHeightOffset;
-    Vector3 vec = CurrentCamera->Position - playerPos;
+    Vector3 vec = camPos - playerPos;
     vec = vec.Normalized;
 
     if (vec.Y == LastHeight)
@@ -87,7 +85,7 @@ public unsafe class CamController : IDisposable
 
     LastHeight = vec.Y;
 
-    // TODO: set a proper curve for converted instead of just a clamp-scale-and-shift
+    // TODO: set a proper eased curve (slerp instead of lerp?) for angle
 
     float range = Configuration.PitchMax - Configuration.PitchMin;
     float rangeFit = (vec.Y + 1) * 0.5f;
