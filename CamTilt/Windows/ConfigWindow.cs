@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Reflection.Metadata;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
@@ -7,11 +8,16 @@ namespace CamTilt.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
+    private const float BAR_SIZE = 256;
     private Configuration Configuration { get; init; }
-
-    // We give this window a constant ID using ###
-    // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
-    // and the window ID will always be "###XYZ counter window" for ImGui
+    private float rawAngle;
+    public void SetRawAngle(float angle) => rawAngle = angle;
+    private float cleanAngle;
+    public void SetCleanAngle(float angle) => cleanAngle = angle;
+    private float mappedTilt;
+    public void SetMappedTilt(float angle) => mappedTilt = angle;
+    public delegate void ConfigChangedHandler();
+    public event ConfigChangedHandler OnConfigChanged = delegate { };
     public ConfigWindow(Plugin plugin) : base("Cam Tilt Config###CamTilt Config")
     {
         Flags = ImGuiWindowFlags.AlwaysAutoResize |
@@ -24,18 +30,6 @@ public class ConfigWindow : Window, IDisposable
 
         Configuration = plugin.Configuration;
     }
-
-    private float rawAngle;
-    public void SetRawAngle(float angle) => rawAngle = angle;
-    private float cleanAngle;
-    public void SetCleanAngle(float angle) => cleanAngle = angle;
-    private float mappedTilt;
-    public void SetMappedTilt(float angle) => mappedTilt = angle;
-
-    public delegate void ConfigChangedHandler();
-
-    public event ConfigChangedHandler OnConfigChanged;
-
     public void Dispose() { }
 
     public override void Draw()
@@ -44,9 +38,27 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.Separator();
         DrawSlider("Player height offset", () => Configuration.PlayerHeightOffset, x => Configuration.PlayerHeightOffset = x, 0, 2);
-        DrawSlider("Pitch Top", () => Configuration.PitchTop, x => Configuration.PitchTop = x, 0, Configuration.PitchBottom - .01f);
-        DrawSlider("Pitch Bottom", () => Configuration.PitchBottom, x => Configuration.PitchBottom = x, Configuration.PitchTop + .01f, 1);
-        // TODO: configs for tilt limits
+
+        ImGui.LabelText("", "");
+        ImGui.SameLine(Configuration.PitchBottom * BAR_SIZE + 8);
+        ImGui.PushItemWidth((1 - Configuration.PitchBottom) * BAR_SIZE);
+        DrawSlider("Pitch Top", () => Configuration.PitchTop, x => Configuration.PitchTop = x, Configuration.PitchBottom + .01f, 1);
+        ImGui.PopItemWidth();
+        ImGui.PushItemWidth(Configuration.PitchTop * BAR_SIZE);
+        DrawSlider("Pitch Bottom", () => Configuration.PitchBottom, x => Configuration.PitchBottom = x, 0, Configuration.PitchTop - .01f);
+        ImGui.PopItemWidth();
+
+        ImGui.Spacing();
+
+        ImGui.LabelText("", "");
+        ImGui.SameLine(Configuration.TiltMin * BAR_SIZE + 8);
+        ImGui.PushItemWidth((1 - Configuration.TiltMin) * BAR_SIZE);
+        DrawSlider("Tilt Max", () => Configuration.TiltMax * 100, x => Configuration.TiltMax = x / 100, Configuration.TiltMin * 100, 100);
+        ImGui.PopItemWidth();
+        ImGui.PushItemWidth(Configuration.TiltMax * BAR_SIZE);
+        DrawSlider("Tilt Min", () => Configuration.TiltMin * 100, x => Configuration.TiltMin = x / 100, 0, Configuration.TiltMax * 100);
+        ImGui.PopItemWidth();
+
 
         ImGui.Separator();
         DrawCheckbox("Show debug stuff", () => Configuration.ShowDebug, x => Configuration.ShowDebug = x);

@@ -110,16 +110,17 @@ public class CamController : IDisposable
 
     // TODO: set a proper eased curve (slerp instead of lerp?) for angle
 
-    float range = Configuration.PitchBottom - Configuration.PitchTop;
+    float limitMin = Configuration.TiltMin * LIMIT_RANGE + LIMIT_MIN;
+    float limitMax = Configuration.TiltMax * LIMIT_RANGE + LIMIT_MIN;
+
+    float range = Configuration.PitchTop - Configuration.PitchBottom;
     float converted = 1 - (float)(Math.Acos(LastHeight) / Math.PI);
     ConfigWindow.SetCleanAngle(converted);
 
-    converted = Math.Clamp((converted - Configuration.PitchTop) / range, 0, 1);
-    converted = (1 - converted) * LIMIT_RANGE + LIMIT_MIN; // scale and fit to final range
+    converted = Math.Clamp((converted - Configuration.PitchBottom) / range, 0, 1);
+    converted = (1 - converted) * (limitMax - limitMin) + limitMin;
     ConfigWindow.SetMappedTilt(converted);
-    // Logger.Verbose($"raw {rangeFit} | converted {converted}");
 
     GameConfig.Set(UiControlOption.TiltOffset, converted);
-
   }
 }
