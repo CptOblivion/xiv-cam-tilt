@@ -102,22 +102,29 @@ public class CamController : IDisposable
   private void UpdateAngle()
   {
     ConfigWindow.SetRawAngle(LastHeight);
-    // TODO: skip this during cutscenes, first person
 
     // TODO: set a proper eased curve (slerp instead of lerp?) for angle
+    // TODO: save separate slider positions for each curve type
 
     float limitMin = Configuration.TiltMin * LIMIT_RANGE + LIMIT_MIN;
     float limitMax = Configuration.TiltMax * LIMIT_RANGE + LIMIT_MIN;
 
     float range = Configuration.PitchTop - Configuration.PitchBottom;
-    float converted = 1 - (float)(Math.Acos(LastHeight) / Math.PI);
-    ConfigWindow.SetCleanAngle(converted);
+    float tilt = 1 - (float)(Math.Acos(LastHeight) / Math.PI);
+    ConfigWindow.SetCleanAngle(tilt);
 
-    converted = Math.Clamp((converted - Configuration.PitchBottom) / range, 0, 1);
-    converted = (1 - converted) * (limitMax - limitMin) + limitMin;
-    ConfigWindow.SetMappedTilt(converted);
+    tilt = (tilt - Configuration.PitchBottom) / range;
+    if (Configuration.Curve == Configuration.CurveOptions.Squared)
+    {
+      tilt = Math.Max(1 - tilt, 0);
+      tilt = 1 - tilt * tilt;
+    }
 
-    GameConfig.Set(UiControlOption.TiltOffset, converted);
+    tilt = Math.Clamp(tilt, 0, 1);
+    tilt = (1 - tilt) * (limitMax - limitMin) + limitMin;
+    ConfigWindow.SetMappedTilt(tilt);
+
+    GameConfig.Set(UiControlOption.TiltOffset, tilt);
   }
 
   private void UpdateAngleAction()
@@ -128,6 +135,7 @@ public class CamController : IDisposable
 
   private bool CheckAllowCameraTilt()
   {
+    // TODO: skip this during cutscenes, first person
     if (!Configuration.GlobalEnable || ClientState.IsGPosing)
     {
       return false;

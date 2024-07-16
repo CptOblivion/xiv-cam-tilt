@@ -7,8 +7,13 @@ namespace CamTilt;
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
+    public enum CurveOptions
+    {
+        Linear,
+        Divided,
+        Squared
+    }
     public int Version { get; set; } = 0;
-
     public bool GlobalEnable { get; set; } = true;
     public float PlayerHeightOffset { get; set; } = 1.4f;
     public float PitchTop { get; set; } = .97f;
@@ -16,6 +21,7 @@ public class Configuration : IPluginConfiguration
     public float TiltMax { get; set; } = 0;
     public float TiltMin { get; set; } = 1;
     public bool ShowDebug { get; set; } = false;
+    public CurveOptions Curve { get; set; } = CurveOptions.Linear;
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

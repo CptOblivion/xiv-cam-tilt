@@ -37,6 +37,14 @@ public class ConfigWindow : Window, IDisposable
         DrawCheckbox("Enable Globally", () => Configuration.GlobalEnable, x => Configuration.GlobalEnable = x);
 
         ImGui.Separator();
+        ImGui.BeginGroup();
+        ImGui.LabelText("Mapping Curve", "");
+        DrawRadioButton("linear", () => (int)Configuration.Curve, x => Configuration.Curve = (Configuration.CurveOptions)x, 0);
+        // DrawRadioButton("divided", () => (int)Configuration.Curve, x => Configuration.Curve = (Configuration.CurveOptions)x, 1);
+        DrawRadioButton("squared", () => (int)Configuration.Curve, x => Configuration.Curve = (Configuration.CurveOptions)x, 2);
+        ImGui.EndGroup();
+
+        ImGui.Spacing();
         DrawSlider("Player height offset", () => Configuration.PlayerHeightOffset, x => Configuration.PlayerHeightOffset = x, 0, 2);
 
         ImGui.LabelText("", "");
@@ -88,6 +96,17 @@ public class ConfigWindow : Window, IDisposable
     {
         var val = getter();
         if (ImGui.SliderFloat(label, ref val, min, max))
+        {
+            setter(val);
+            Configuration.Save();
+            OnConfigChanged?.Invoke();
+        };
+    }
+
+    private void DrawRadioButton(string label, Func<int> getter, Action<int> setter, int index)
+    {
+        var val = getter();
+        if (ImGui.RadioButton(label, ref val, index))
         {
             setter(val);
             Configuration.Save();
