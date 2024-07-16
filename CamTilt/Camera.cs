@@ -8,6 +8,7 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 using Dalamud.Game.Config;
 using Dalamud.Logging.Internal;
 using CamTilt.Windows;
+using System.Reflection;
 
 
 
@@ -43,7 +44,13 @@ public class CamController : IDisposable
 
     // TODO: should only add when in-game (maybe wait until current player is valid?)
     Framework.Update += OnFrameworkTick;
-    ConfigWindow.OnConfigChanged += UpdateAngle;
+    ConfigWindow.OnConfigChanged += UpdateAngleAction;
+  }
+
+  public void Dispose()
+  {
+    Framework.Update -= OnFrameworkTick;
+    ConfigWindow.OnConfigChanged -= UpdateAngleAction;
   }
 
   /*
@@ -57,11 +64,7 @@ public class CamController : IDisposable
   */
   private void OnFrameworkTick(IFramework framework)
   {
-
-    if (!Configuration.GlobalEnable || ClientState.IsGPosing || ClientState.LocalPlayer == null)
-    {
-      return;
-    }
+    if (ClientState.LocalPlayer == null || !CheckAllowCameraTilt()) return;
 
     Vector3 camPos;
     unsafe
@@ -80,8 +83,6 @@ public class CamController : IDisposable
       camPos = cam->Position;
     }
 
-    // TODO: skip this during cutscenes, first person
-
     IPlayerCharacter localPlayer = ClientState.LocalPlayer;
 
     Vector3 playerPos = localPlayer.Position;
@@ -98,15 +99,10 @@ public class CamController : IDisposable
     UpdateAngle();
   }
 
-  public void Dispose()
-  {
-    Framework.Update -= OnFrameworkTick;
-    ConfigWindow.OnConfigChanged -= UpdateAngle;
-  }
-
   private void UpdateAngle()
   {
     ConfigWindow.SetRawAngle(LastHeight);
+    // TODO: skip this during cutscenes, first person
 
     // TODO: set a proper eased curve (slerp instead of lerp?) for angle
 
@@ -122,5 +118,20 @@ public class CamController : IDisposable
     ConfigWindow.SetMappedTilt(converted);
 
     GameConfig.Set(UiControlOption.TiltOffset, converted);
+  }
+
+  private void UpdateAngleAction()
+  {
+    if (!CheckAllowCameraTilt()) return;
+    UpdateAngle();
+  }
+
+  private bool CheckAllowCameraTilt()
+  {
+    if (!Configuration.GlobalEnable || ClientState.IsGPosing)
+    {
+      return false;
+    }
+    return true;
   }
 }
