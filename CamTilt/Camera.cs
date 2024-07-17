@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Common.Math;
 using Dalamud.Game.Config;
 using Dalamud.Logging.Internal;
 using CamTilt.Windows;
-using System.Reflection;
+using Dalamud.Game.ClientState.Conditions;
 
 
 
@@ -22,6 +22,7 @@ public class CamController : IDisposable
   private IFramework Framework { get; init; }
   private IClientState ClientState { get; init; }
   private IGameConfig GameConfig { get; init; }
+  private ICondition Condition { get; init; }
   private ConfigWindow ConfigWindow { get; init; }
 
   private const float LIMIT_MIN = -.08f;
@@ -32,12 +33,14 @@ public class CamController : IDisposable
     IFramework framework,
     IClientState clientState,
     IGameConfig gameConfig,
+    ICondition condition,
     ModuleLog logger,
     ConfigWindow configWindow)
   {
     Configuration = configuration;
     Framework = framework;
     ClientState = clientState;
+    Condition = condition;
     Logger = logger;
     ConfigWindow = configWindow;
     GameConfig = gameConfig;
@@ -86,7 +89,9 @@ public class CamController : IDisposable
     IPlayerCharacter localPlayer = ClientState.LocalPlayer;
 
     Vector3 playerPos = localPlayer.Position;
-    playerPos.Y += Configuration.PlayerHeightOffset;
+
+    TiltValues tiltValues = getTiltValues();
+    playerPos.Y += tiltValues.HeightOffset; // TODO: replace this with the value that is surely stored somewhere in the game
     Vector3 vec = camPos - playerPos;
     vec = vec.Normalized;
 
@@ -96,29 +101,22 @@ public class CamController : IDisposable
     }
 
     LastHeight = vec.Y;
-    UpdateAngle();
+    UpdateAngle(tiltValues);
   }
 
-  private void UpdateAngle()
+  private void UpdateAngle(TiltValues tiltValues)
   {
     ConfigWindow.SetRawAngle(LastHeight);
 
-    // TODO: set a proper eased curve (slerp instead of lerp?) for angle
-    // TODO: save separate slider positions for each curve type
+    float limitMin = tiltValues.TiltMin * LIMIT_RANGE + LIMIT_MIN;
+    float limitMax = tiltValues.TiltMax * LIMIT_RANGE + LIMIT_MIN;
 
-    float limitMin = Configuration.TiltMin * LIMIT_RANGE + LIMIT_MIN;
-    float limitMax = Configuration.TiltMax * LIMIT_RANGE + LIMIT_MIN;
-
-    float range = Configuration.PitchTop - Configuration.PitchBottom;
+    float range = tiltValues.PitchLookingDown - tiltValues.PitchLookingUp;
     float tilt = 1 - (float)(Math.Acos(LastHeight) / Math.PI);
     ConfigWindow.SetCleanAngle(tilt);
 
-    tilt = (tilt - Configuration.PitchBottom) / range;
-    if (Configuration.Curve == Configuration.CurveOptions.Squared)
-    {
-      tilt = Math.Max(1 - tilt, 0);
-      tilt = 1 - tilt * tilt;
-    }
+    tilt = (tilt - tiltValues.PitchLookingUp) / range;
+    tilt = 1 - (float)Math.Pow(Math.Max(1 - tilt, 0), tiltValues.CurveExponent);
 
     tilt = Math.Clamp(tilt, 0, 1);
     tilt = (1 - tilt) * (limitMax - limitMin) + limitMin;
@@ -130,7 +128,7 @@ public class CamController : IDisposable
   private void UpdateAngleAction()
   {
     if (!CheckAllowCameraTilt()) return;
-    UpdateAngle();
+    UpdateAngle(getTiltValues());
   }
 
   private bool CheckAllowCameraTilt()
@@ -141,5 +139,18 @@ public class CamController : IDisposable
       return false;
     }
     return true;
+  }
+
+  private TiltValues getTiltValues()
+  {
+    if (Configuration.SeparateValuesFlying && Condition[ConditionFlag.InFlight])
+    {
+      return Configuration.ValuesFlying;
+    }
+    if (Configuration.SeparateValuesMounted && (Condition[ConditionFlag.Mounted] || Condition[ConditionFlag.Mounted2]))
+    {
+      return Configuration.ValuesMounted;
+    }
+    return Configuration.ValuesOnFoot;
   }
 }
