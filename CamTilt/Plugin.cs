@@ -5,69 +5,78 @@ using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using CamTilt.Windows;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
+using Lumina;
+using Dalamud.Logging.Internal;
 
 namespace CamTilt;
 
 public sealed class Plugin : IDalamudPlugin
 {
-    [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
-    [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
+  [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
+  [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
 
-    private const string CommandName = "/testcommand";
+  private const string ToggleCommand = "/CamTiltToggle";
+  private const string ToggleSettings = "/CamTiltSettings";
 
-    public Configuration Configuration { get; init; }
+  public Configuration Configuration { get; init; }
 
-    public readonly WindowSystem WindowSystem = new("CamTilt");
-    private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
+  public readonly WindowSystem WindowSystem = new("CamTilt");
+  private ConfigWindow ConfigWindow { get; init; }
+  private CamController camController { get; init; }
 
-    public Plugin()
+  public Plugin(
+          IDalamudPluginInterface pi,
+          IClientState clientState,
+          IFramework framework,
+          IGameConfig gameConfig,
+          ICondition condition)
+  {
+    Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+    ConfigWindow = new ConfigWindow(this);
+
+    ModuleLog logger = new ModuleLog("CamTilt");
+
+    camController = new CamController(Configuration, framework, clientState, gameConfig, condition, logger, ConfigWindow);
+
+    WindowSystem.AddWindow(ConfigWindow);
+
+    CommandManager.AddHandler(ToggleCommand, new CommandInfo(OnToggleCommand)
     {
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+      HelpMessage = "Globally toggle Cam Tilt plugin"
+    });
 
-        // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-
-        ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
-
-        WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
-
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = "A useful message to display in /xlhelp"
-        });
-
-        PluginInterface.UiBuilder.Draw += DrawUI;
-
-        // This adds a button to the plugin installer entry of this plugin which allows
-        // to toggle the display status of the configuration ui
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-
-        // Adds another button that is doing the same but for the main ui of the plugin
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
-    }
-
-    public void Dispose()
+    CommandManager.AddHandler(ToggleSettings, new CommandInfo(OnSettingsCommand)
     {
-        WindowSystem.RemoveAllWindows();
+      HelpMessage = "Toggles Cam Tilt settings"
+    });
 
-        ConfigWindow.Dispose();
-        MainWindow.Dispose();
+    PluginInterface.UiBuilder.Draw += DrawUI;
 
-        CommandManager.RemoveHandler(CommandName);
-    }
+    PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
+  }
 
-    private void OnCommand(string command, string args)
-    {
-        // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
-    }
+  public void Dispose()
+  {
+    WindowSystem.RemoveAllWindows();
+    camController.Dispose();
+    ConfigWindow.Dispose();
+    CommandManager.RemoveHandler(ToggleCommand);
+  }
 
-    private void DrawUI() => WindowSystem.Draw();
+  private void OnToggleCommand(string command, string args)
+  {
+    // expose command to enable/disable, for macros and such
+    Configuration.GlobalEnable = !Configuration.GlobalEnable;
+    Configuration.Save();
+  }
 
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => MainWindow.Toggle();
+  private void OnSettingsCommand(string command, string args)
+  {
+    ConfigWindow.Toggle();
+  }
+
+  private void DrawUI() => WindowSystem.Draw();
+
+  public void ToggleConfigUI() => ConfigWindow.Toggle();
 }
