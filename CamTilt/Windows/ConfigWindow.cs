@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Numerics;
-using System.Reflection.Metadata;
 using Dalamud.Interface.Windowing;
-using Dalamud.Bindings.Imgui;
+// this doesn't exist any more, but it's a key part of every setting in this file. Where is it now?
+// using Dalamud.Bindings.ImGui;
 
 namespace CamTilt.Windows;
 
@@ -20,7 +19,7 @@ public class ConfigWindow : Window, IDisposable
   public event ConfigChangedHandler OnConfigChanged = delegate { };
   public ConfigWindow(Plugin plugin) : base("Cam Tilt Config###CamTilt Config")
   {
-    Flags = ImGuiWindowFlags.AlwaysAutoResize |
+    Flags = AlwaysAutoResize |
       ImGuiWindowFlags.NoResize |
       ImGuiWindowFlags.NoCollapse |
       ImGuiWindowFlags.NoScrollbar |
