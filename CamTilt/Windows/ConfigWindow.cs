@@ -1,7 +1,6 @@
 ﻿using System;
 using Dalamud.Interface.Windowing;
 // this doesn't exist any more, but it's a key part of every setting in this file. Where is it now?
-using ImGuiNET;
 
 namespace CamTilt.Windows;
 
