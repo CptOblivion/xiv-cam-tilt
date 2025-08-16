@@ -2,7 +2,7 @@
 using System.Numerics;
 using System.Reflection.Metadata;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
+using Dalamud.Bindings.Imgui;
 
 namespace CamTilt.Windows;
 
@@ -61,7 +61,8 @@ public class ConfigWindow : Window, IDisposable
       setter(val);
       Configuration.Save();
       OnConfigChanged?.Invoke();
-    };
+    }
+    ;
   }
 
   private void DrawSlider(string label, Func<float> getter, Action<float> setter, float min, float max, ImGuiSliderFlags flags = ImGuiSliderFlags.None, string Id = "")
@@ -73,7 +74,8 @@ public class ConfigWindow : Window, IDisposable
       setter(val);
       Configuration.Save();
       OnConfigChanged?.Invoke();
-    };
+    }
+    ;
   }
 
   private void DrawTiltValues(TiltValues tiltValues, string Id)
