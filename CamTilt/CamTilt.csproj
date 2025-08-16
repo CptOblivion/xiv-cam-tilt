@@ -3,11 +3,11 @@
   <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
 
   <PropertyGroup>
-    <!-- <Version>0.0.0.1</Version>
-    <Description>A sample plugin.</Description>
+    <Version>0.0.0.1</Version>
+    <Description>Adjusts the camera tilt when looking up and down, for a more natural-feeling camera.</Description>
     <PackageProjectUrl>https://github.com/CptOblivion/xiv-cam-tilt</PackageProjectUrl>
-    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <IsPackable>false</IsPackable> -->
+    <!-- <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression> -->
+    <!-- <IsPackable>false</IsPackable> -->
   </PropertyGroup>
 
   <ItemGroup>
