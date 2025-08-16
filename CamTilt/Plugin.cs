@@ -1,12 +1,9 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using CamTilt.Windows;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
-using Lumina;
 using Dalamud.Logging.Internal;
 
 namespace CamTilt;

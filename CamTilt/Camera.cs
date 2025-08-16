@@ -2,8 +2,6 @@ using System;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-// using FFXIVClientStructs.FFXIV.Client.Game;
-// using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Dalamud.Game.Config;
 using Dalamud.Logging.Internal;
@@ -147,7 +145,7 @@ public class CamController : IDisposable
     {
       return Configuration.ValuesFlying;
     }
-    if (Configuration.SeparateValuesMounted && (Condition[ConditionFlag.Mounted] || Condition[ConditionFlag.Mounted2]))
+    if (Configuration.SeparateValuesMounted && (Condition[ConditionFlag.Mounted] || Condition[ConditionFlag.RidingPillion]))
     {
       return Configuration.ValuesMounted;
     }
